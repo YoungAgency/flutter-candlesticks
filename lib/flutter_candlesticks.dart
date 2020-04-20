@@ -21,7 +21,7 @@ class OHLCVGraph extends StatefulWidget {
     this.increaseColor = Colors.green,
     this.decreaseColor = Colors.red,
     this.cursorColor = Colors.black,
-    this.selectedPriceTextColor = Colors.white,
+    this.cursorTextColor = Colors.white,
     this.lines = const [],
     this.formatFn,
     this.fullscreenGridLine = false,
@@ -74,7 +74,7 @@ class OHLCVGraph extends StatefulWidget {
   // CursorColor
   final Color cursorColor;
 
-  final Color selectedPriceTextColor;
+  final Color cursorTextColor;
 
   // draw lines on chart
   final List<LineValue> lines;
@@ -231,7 +231,7 @@ class _OHLCVGraphState extends State<OHLCVGraph> {
             increaseColor: widget.increaseColor,
             decreaseColor: widget.decreaseColor,
             cursorColor: widget.cursorColor,
-            selectedPriceTextColor: widget.selectedPriceTextColor,
+            cursorTextColor: widget.cursorTextColor,
             pointsMappingX: pointsMappingX,
             pointsMappingY: pointsMappingY,
             lines: widget.lines,
@@ -263,7 +263,7 @@ class _OHLCVPainter extends CustomPainter {
     @required this.increaseColor,
     @required this.decreaseColor,
     @required this.cursorColor,
-    @required this.selectedPriceTextColor,
+    @required this.cursorTextColor,
     @required this.pointsMappingX,
     @required this.pointsMappingY,
     @required this.lines,
@@ -287,7 +287,7 @@ class _OHLCVPainter extends CustomPainter {
   final Color decreaseColor;
 
   final Color cursorColor;
-  final Color selectedPriceTextColor;
+  final Color cursorTextColor;
   final List pointsMappingX;
   final List pointsMappingY;
   final List<LineValue> lines;
@@ -563,7 +563,7 @@ class _OHLCVPainter extends CustomPainter {
         value: this.cursorYPrice,
         lineColor: this.cursorColor,
         boxColor: this.cursorColor,
-        textColor: this.selectedPriceTextColor,
+        textColor: this.cursorTextColor,
         dashed: true,
       );
     }
@@ -659,7 +659,7 @@ class _OHLCVPainter extends CustomPainter {
         volumeProp != old.volumeProp ||
         gridLineLabelColor != old.gridLineLabelColor ||
         cursorColor != old.cursorColor ||
-        selectedPriceTextColor != old.selectedPriceTextColor ||
+        cursorTextColor != old.cursorTextColor ||
         lines.hashCode != old.lines.hashCode ||
         cursorX != old.cursorX ||
         cursorY != old.cursorY ||
