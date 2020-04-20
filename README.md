@@ -17,6 +17,10 @@ Elegant OHLC Candlestick and Trade Volume charts for Flutter
 | labelPrefix        | Default `"$"`. Prefix before grid line labels.                           |
 | increaseColor      | Default `Colors.green`. Color of increasing candles.                     |
 | decreaseColor      | Default `Colors.red`. Color of decreasing candles.                       |
+| onSelect           | Optional. Invoked when a new candle is selected                          |
+| cursorColor        | Default `Colors.black`. Color of cursor                                  |
+| lines              | Optional. Draw lines with value label on chart                           |
+| formatFn           | Optional. applied to all values displayed. (e.g gridlines)               |
 
 ## Examples
 
