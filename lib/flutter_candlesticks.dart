@@ -22,6 +22,7 @@ class OHLCVGraph extends StatefulWidget {
     this.decreaseColor = Colors.red,
     this.cursorColor = Colors.black,
     this.cursorTextColor = Colors.white,
+    this.cursorLineWidth = 0.5,
     this.lines = const [],
     this.formatFn,
     this.fullscreenGridLine = false,
@@ -75,6 +76,8 @@ class OHLCVGraph extends StatefulWidget {
   final Color cursorColor;
 
   final Color cursorTextColor;
+
+  final double cursorLineWidth;
 
   // draw lines on chart
   final List<LineValue> lines;
@@ -232,6 +235,7 @@ class _OHLCVGraphState extends State<OHLCVGraph> {
             decreaseColor: widget.decreaseColor,
             cursorColor: widget.cursorColor,
             cursorTextColor: widget.cursorTextColor,
+            cursorLineWidth: widget.cursorLineWidth,
             pointsMappingX: pointsMappingX,
             pointsMappingY: pointsMappingY,
             lines: widget.lines,
@@ -264,6 +268,7 @@ class _OHLCVPainter extends CustomPainter {
     @required this.decreaseColor,
     @required this.cursorColor,
     @required this.cursorTextColor,
+    @required this.cursorLineWidth,
     @required this.pointsMappingX,
     @required this.pointsMappingY,
     @required this.lines,
@@ -288,6 +293,7 @@ class _OHLCVPainter extends CustomPainter {
 
   final Color cursorColor;
   final Color cursorTextColor;
+  final double cursorLineWidth;
   final List pointsMappingX;
   final List pointsMappingY;
   final List<LineValue> lines;
@@ -377,7 +383,9 @@ class _OHLCVPainter extends CustomPainter {
           canvas.drawLine(
             Offset(0, gridLineY),
             Offset(size.width, gridLineY),
-            Paint()..color = gridLineColor,
+            Paint()
+              ..color = gridLineColor
+              ..strokeWidth = gridLineWidth,
           );
         } else {
           gridLineValue = _max - (((_max - _min) / (gridLineAmount - 1)) * i);
@@ -388,6 +396,7 @@ class _OHLCVPainter extends CustomPainter {
             lineColor: gridLineColor,
             boxColor: Colors.transparent,
             textColor: gridLineLabelColor,
+            lineWidth: gridLineWidth,
             dashed: false,
           );
         }
@@ -524,13 +533,14 @@ class _OHLCVPainter extends CustomPainter {
         lineColor: line.lineColor,
         boxColor: line.lineColor,
         textColor: line.textColor,
+        lineWidth: line.lineWidth,
         dashed: line.dashed,
       );
     }
 
     var cursorPaint = Paint()
       ..color = this.cursorColor
-      ..strokeWidth = 0.5;
+      ..strokeWidth = this.cursorLineWidth;
 
     // draw cursor circle
     if (this.cursorX != -1 && this.cursorY != -1) {
@@ -564,6 +574,7 @@ class _OHLCVPainter extends CustomPainter {
         lineColor: this.cursorColor,
         boxColor: this.cursorColor,
         textColor: this.cursorTextColor,
+        lineWidth: this.cursorLineWidth,
         dashed: true,
       );
     }
@@ -574,6 +585,7 @@ class _OHLCVPainter extends CustomPainter {
     @required Canvas canvas,
     @required Size size,
     @required double value,
+    @required double lineWidth,
     Color lineColor = Colors.black,
     Color boxColor = Colors.black,
     Color textColor = Colors.white,
@@ -583,6 +595,9 @@ class _OHLCVPainter extends CustomPainter {
     var y = (chartHeight * (value - _min)) / (_max - _min);
     y = (y - chartHeight) * -1; // invert y value
 
+    final paint = Paint()
+      ..color = lineColor
+      ..strokeWidth = lineWidth;
     // draw label line
     if (dashed) {
       var max = size.width;
@@ -597,14 +612,17 @@ class _OHLCVPainter extends CustomPainter {
         var endX = startX + dashWidth;
         endX = endX > max ? max : endX;
         canvas.drawLine(
-            Offset(startX, y), Offset(endX, y), Paint()..color = lineColor);
+          Offset(startX, y),
+          Offset(endX, y),
+          paint,
+        );
         startX += space;
       }
     } else {
       canvas.drawLine(
         Offset(0, y),
         Offset(size.width - valueLabelWidth, y),
-        Paint()..color = lineColor,
+        paint,
       );
     }
 
@@ -668,8 +686,17 @@ class _OHLCVPainter extends CustomPainter {
 }
 
 class LineValue {
-  double value;
-  Color textColor;
-  Color lineColor;
-  bool dashed;
+  final double value;
+  final Color textColor;
+  final Color lineColor;
+  final bool dashed;
+  final double lineWidth;
+
+  LineValue({
+    @required this.value,
+    this.textColor = Colors.white,
+    this.lineColor = Colors.black,
+    this.dashed = false,
+    this.lineWidth = 0.5,
+  });
 }
