@@ -102,23 +102,6 @@ class _OHLCVGraphState extends State<OHLCVGraph> {
   double _max = -double.infinity;
   double _maxVolume = -double.infinity;
 
-  @override
-  void initState() {
-    super.initState();
-    // calculate min max and _maxVolume
-    for (var i in widget.data) {
-      if (i["high"] > _max) {
-        _max = i["high"].toDouble();
-      }
-      if (i["low"] < _min) {
-        _min = i["low"].toDouble();
-      }
-      if (i["volumeto"] > _maxVolume) {
-        _maxVolume = i["volumeto"].toDouble();
-      }
-    }
-  }
-
   void _onUnselect() {
     if (this.widget.onSelect != null) {
       this.widget.onSelect(null);
@@ -191,6 +174,20 @@ class _OHLCVGraphState extends State<OHLCVGraph> {
 
   @override
   Widget build(BuildContext context) {
+    _min = double.infinity;
+    _max = -double.infinity;
+    _maxVolume = -double.infinity;
+    for (var i in widget.data) {
+      if (i["high"] > _max) {
+        _max = i["high"].toDouble();
+      }
+      if (i["low"] < _min) {
+        _min = i["low"].toDouble();
+      }
+      if (i["volumeto"] > _maxVolume) {
+        _maxVolume = i["volumeto"].toDouble();
+      }
+    }
     return new LimitedBox(
       maxHeight: widget.fallbackHeight,
       maxWidth: widget.fallbackWidth,
@@ -681,7 +678,10 @@ class _OHLCVPainter extends CustomPainter {
         lines.hashCode != old.lines.hashCode ||
         cursorX != old.cursorX ||
         cursorY != old.cursorY ||
-        cursorYPrice != old.cursorYPrice;
+        cursorYPrice != old.cursorYPrice ||
+        _max != old._max ||
+        _min != old._min ||
+        _maxVolume != old._maxVolume;
   }
 }
 
