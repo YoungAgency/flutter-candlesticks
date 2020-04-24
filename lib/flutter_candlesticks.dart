@@ -188,6 +188,14 @@ class _OHLCVGraphState extends State<OHLCVGraph> {
         _maxVolume = i["volumeto"].toDouble();
       }
     }
+    for (var l in widget.lines) {
+      if (l.value > _max) {
+        _max = l.value;
+      }
+      if (l.value < _min) {
+        _min = l.value;
+      }
+    }
     return new LimitedBox(
       maxHeight: widget.fallbackHeight,
       maxWidth: widget.fallbackWidth,
@@ -336,6 +344,15 @@ class _OHLCVPainter extends CustomPainter {
       }
       if (i["volumeto"] > _maxVolume) {
         _maxVolume = i["volumeto"].toDouble();
+      }
+    }
+
+    for (var l in lines) {
+      if (l.value > _max) {
+        _max = l.value;
+      }
+      if (l.value < _min) {
+        _min = l.value;
       }
     }
 
