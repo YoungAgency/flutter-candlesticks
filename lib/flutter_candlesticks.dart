@@ -25,7 +25,9 @@ class OHLCVGraph extends StatefulWidget {
     this.cursorLineWidth = 0.5,
     this.lines = const [],
     this.formatFn,
+    this.xAxisLabelFormatFn,
     this.fullscreenGridLine = false,
+    this.showXAxisLabel = false,
   }) : super(key: key) {
     assert(data != null);
     if (fullscreenGridLine) {
@@ -85,7 +87,11 @@ class OHLCVGraph extends StatefulWidget {
   /// formatFn is applyed to all values displyed on chart if provided
   final FormatFn formatFn;
 
+  final XAxisLabelFormatFn xAxisLabelFormatFn;
+
   final bool fullscreenGridLine;
+
+  final bool showXAxisLabel;
 
   @override
   _OHLCVGraphState createState() => _OHLCVGraphState();
@@ -249,6 +255,8 @@ class _OHLCVGraphState extends State<OHLCVGraph> {
             cursorY: _cursorY,
             cursorYPrice: _cursorYPrice,
             fullscreenGridLine: widget.fullscreenGridLine,
+            showXAxisLabels: widget.showXAxisLabel,
+            xAxisLabelFormatFn: widget.xAxisLabelFormatFn,
           ),
         ),
       ),
@@ -257,6 +265,8 @@ class _OHLCVGraphState extends State<OHLCVGraph> {
 }
 
 typedef FormatFn = String Function(double val);
+
+typedef XAxisLabelFormatFn = String Function(DateTime date);
 
 class _OHLCVPainter extends CustomPainter {
   _OHLCVPainter(
@@ -278,10 +288,12 @@ class _OHLCVPainter extends CustomPainter {
     @required this.pointsMappingY,
     @required this.lines,
     this.formatFn,
+    this.xAxisLabelFormatFn,
     this.cursorX = -1,
     this.cursorY = -1,
     this.cursorYPrice = 0,
     this.fullscreenGridLine = false,
+    this.showXAxisLabels = false,
   });
 
   final List data;
@@ -311,8 +323,10 @@ class _OHLCVPainter extends CustomPainter {
   final double valueLabelHeight = 20.0; // this must be valueLabelFontSize*2
 
   final FormatFn formatFn;
+  final XAxisLabelFormatFn xAxisLabelFormatFn;
 
   final bool fullscreenGridLine;
+  final bool showXAxisLabels;
 
   double _min;
   double _max;
@@ -329,6 +343,22 @@ class _OHLCVPainter extends CustomPainter {
       decimals = 4;
     }
     return n.toStringAsFixed(decimals);
+  }
+
+  _timeParse(int time, bool onlyTime) {
+    var date = DateTime.fromMillisecondsSinceEpoch(time);
+    if (this.xAxisLabelFormatFn != null) {
+      return this.xAxisLabelFormatFn(date);
+    }
+    if (onlyTime) {
+      var hour = date.hour;
+      var minute = date.minute;
+      return "${hour < 10 ? "0" : ""}${hour.toString()}:${minute < 10 ? "0" : ""}${minute.toString()}";
+    } else {
+      var day = date.day;
+      var month = date.month;
+      return "${month < 10 ? "0" : ""}${month.toString()}/${day < 10 ? "0" : ""}${day.toString()}";
+    }
   }
 
   update() {
@@ -515,6 +545,47 @@ class _OHLCVPainter extends CustomPainter {
       pointsMappingY.add({"from": low, "to": height});
     }
 
+    // draw x axis value labels
+    if (this.showXAxisLabels) {
+      if (data.length > 2) {
+        var firstTime = data.first["time"];
+        var lastTime = data.last["time"];
+
+        var sameDay = (lastTime - firstTime) <= 8.64e+7;
+
+        var nLabels = 2;
+        int indexDist = (data.length ~/ 3);
+        var i = indexDist;
+        var paragraphWidth = 40.0;
+        double dx = 0;
+        int n = 0;
+        do {
+          dx = pointsMappingX[i]["from"] +
+              ((pointsMappingX[i]["from"] - pointsMappingX[i]["to"]) / 2);
+          // draw value paragraphs
+          final Paragraph paragraph = _getParagraphBuilderFromString(
+                  _timeParse(data[i]["time"], sameDay), gridLineLabelColor)
+              .build()
+                ..layout(
+                  ParagraphConstraints(
+                    width: paragraphWidth,
+                  ),
+                );
+          canvas.drawParagraph(
+            paragraph,
+            Offset(
+              dx - paragraphWidth / 2 + rectWidth / 2 + lineWidth / 2,
+              height + 6,
+            ),
+          );
+          i += indexDist;
+          n++;
+        } while (i < data.length - 1 &&
+            dx < (size.width - valueLabelWidth - paragraphWidth / 2) &&
+            n < nLabels);
+      }
+    }
+
     if (enableGridLines && fullscreenGridLine) {
       for (int i = 0; i < gridLineAmount; i++) {
         double gridLineDist = height / (gridLineAmount - 1);
@@ -522,12 +593,13 @@ class _OHLCVPainter extends CustomPainter {
         var gridLineValue = _max - (((_max - _min) / (gridLineAmount - 1)) * i);
         // draw value paragraphs
         final Paragraph paragraph =
-            _getParagraphBuilder(gridLineValue, gridLineLabelColor).build()
-              ..layout(
-                ParagraphConstraints(
-                  width: valueLabelWidth,
-                ),
-              );
+            _getParagraphBuilderFromDouble(gridLineValue, gridLineLabelColor)
+                .build()
+                  ..layout(
+                    ParagraphConstraints(
+                      width: valueLabelWidth,
+                    ),
+                  );
         canvas.drawParagraph(
           paragraph,
           Offset(
@@ -655,15 +727,17 @@ class _OHLCVPainter extends CustomPainter {
     );
 
     // draw value text into rounded rect
-    final Paragraph paragraph = _getParagraphBuilder(value, textColor).build()
-      ..layout(ParagraphConstraints(
-        width: valueLabelWidth,
-      ));
+    final Paragraph paragraph =
+        _getParagraphBuilderFromDouble(value, textColor).build()
+          ..layout(ParagraphConstraints(
+            width: valueLabelWidth,
+          ));
     canvas.drawParagraph(paragraph,
         Offset(size.width - valueLabelWidth, y - valueLabelFontSize / 2));
   }
 
-  ParagraphBuilder _getParagraphBuilder(double value, Color textColor) {
+  ParagraphBuilder _getParagraphBuilderFromDouble(
+      double value, Color textColor) {
     return ParagraphBuilder(
       ParagraphStyle(
         textDirection: TextDirection.ltr,
@@ -678,6 +752,22 @@ class _OHLCVPainter extends CustomPainter {
       ..addText(
         labelPrefix + numCommaParse(value),
       );
+  }
+
+  ParagraphBuilder _getParagraphBuilderFromString(
+      String value, Color textColor) {
+    return ParagraphBuilder(
+      ParagraphStyle(
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      ),
+    )
+      ..pushStyle(TextStyle(
+        color: textColor,
+        fontSize: valueLabelFontSize,
+        fontWeight: FontWeight.bold,
+      ).getTextStyle())
+      ..addText(value);
   }
 
   @override
